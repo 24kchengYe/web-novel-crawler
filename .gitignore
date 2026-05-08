@@ -1,0 +1,12 @@
+data/
+logs/
+proxy_pool_configs/
+__pycache__/
+*.pyc
+*.log
+*.bak
+download_log.json
+match_cache.json
+proxy_pool_state.json
+booklist_qidian_185.json
+jjwxc_books.json
