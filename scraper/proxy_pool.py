@@ -28,7 +28,7 @@ if sys.stdout.encoding != 'utf-8':
 if sys.stderr.encoding != 'utf-8':
     sys.stderr.reconfigure(encoding='utf-8')
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 NEKO_DIR = r"D:\BaiduNetdiskDownload\v2rayN-Core(1)\nekoray-4.0.1-2024-12-12-windows64 (1)\nekoray"
 NEKO_CORE = os.path.join(NEKO_DIR, "nekobox_core.exe")
 PROFILES_DIR = os.path.join(NEKO_DIR, "config", "profiles")

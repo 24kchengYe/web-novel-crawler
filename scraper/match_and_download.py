@@ -20,7 +20,7 @@ if sys.stdout.encoding != 'utf-8':
 if sys.stderr.encoding != 'utf-8':
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BOOKLIST_PATH = os.path.join(BASE_DIR, 'booklist.json')
 MATCH_CACHE_PATH = os.path.join(BASE_DIR, 'match_cache.json')
 DATA_DIR = os.path.join(BASE_DIR, 'data')
@@ -187,7 +187,7 @@ def batch_download_from_booklist(max_books=None, skip_categories=None):
     """
     从 booklist + match_cache 批量下载
     """
-    import novel_scraper as ns
+    from scraper import novel_scraper as ns
 
     with open(BOOKLIST_PATH, 'r', encoding='utf-8') as f:
         booklist = json.load(f)

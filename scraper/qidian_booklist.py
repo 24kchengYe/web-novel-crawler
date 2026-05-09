@@ -23,7 +23,7 @@ if sys.stderr.encoding != 'utf-8':
 # ============================================================
 # 配置
 # ============================================================
-OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) "
                   "AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",

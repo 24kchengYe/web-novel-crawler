@@ -20,22 +20,30 @@
 | 数据量 | ~25 GB |
 | 分类覆盖 | 玄幻/仙侠/都市/悬疑/言情/古言 等 15+ 类 |
 
-## 文件说明
+## 项目结构
 
 ```
-novel_scraper.py        # 核心爬虫（qbxsw.com）
-parallel_download.py    # 并行下载器
-auto_run.py             # 自动恢复运行器（被限流自动等待重启）
-qidian_booklist.py      # 起点中文网榜单爬虫（获取书单）
-supplement_booklist.py  # 从 qbxsw 补充书单
-match_and_download.py   # 书单匹配 + 批量下载
-multi_platform_stats.py # 多平台统计数据采集（起点/晋江/纵横/豆瓣）
-fetch_stats.py          # 起点统计数据单独采集
-fix_metadata.py         # 补生成缺失的 metadata.json
-jjwxc_scraper.py        # 晋江书目爬虫（盗版正文 + 晋江统计）
-jjwxc_stats.py          # 晋江统计数据独立采集
-proxy_pool.py           # 代理池管理（NekoBox sing-box）
-booklist.json           # 总书单（1959本）
+scraper/                    # 爬虫模块
+  novel_scraper.py          #   核心爬虫（qbxsw.com）
+  parallel_download.py      #   并行下载器
+  auto_run.py               #   自动恢复运行器
+  qidian_booklist.py        #   起点中文网榜单爬虫
+  supplement_booklist.py    #   从 qbxsw 补充书单
+  match_and_download.py     #   书单匹配 + 批量下载
+  multi_platform_stats.py   #   多平台统计数据采集
+  fetch_stats.py            #   起点统计数据采集
+  fix_metadata.py           #   补生成缺失的 metadata
+  jjwxc_scraper.py          #   晋江书目爬虫
+  jjwxc_stats.py            #   晋江统计数据采集
+  proxy_pool.py             #   代理池管理
+
+cleaning/                   # 数据清洗模块
+  clean_corpus.py           #   语料清洗管线（去水印/广告/归一化/质量分级）
+
+tests/                      # 测试脚本
+booklist.json               # 总书单（1959本）
+data/                       # 原始数据（不修改）
+data_cleaned/               # 清洗后数据（自动生成）
 ```
 
 ## 输出格式
@@ -74,16 +82,19 @@ data/
 
 ```bash
 # 1. 批量下载（2个worker并行）
-python parallel_download.py --workers 2
+python -m scraper.parallel_download --workers 2
 
 # 2. 自动恢复模式（推荐，被限流自动等待重启）
-python auto_run.py
+python -m scraper.auto_run
 
 # 3. 补充多平台统计数据
-python multi_platform_stats.py
+python -m scraper.multi_platform_stats
 
-# 4. 查看统计覆盖率
-python multi_platform_stats.py --stats
+# 4. 数据清洗（去水印/广告/质量分级）
+python -m cleaning.clean_corpus --workers 8
+
+# 5. 查看统计覆盖率
+python -m scraper.multi_platform_stats --stats
 ```
 
 ## 依赖

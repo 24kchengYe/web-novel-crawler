@@ -1,0 +1,1 @@
+# Web novel scraper package

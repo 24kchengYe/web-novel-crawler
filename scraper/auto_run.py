@@ -9,7 +9,7 @@ import os, sys, io, time, subprocess, urllib.request
 if sys.stdout.encoding != 'utf-8':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PYTHON = sys.executable
 TEST_URL = 'https://www.qbxsw.com/du_17701/21578934.html'
 HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
@@ -36,7 +36,7 @@ def wait_for_recovery():
 def run_downloader():
     print(f"\n[{time.strftime('%H:%M:%S')}] 启动爬虫", flush=True)
     proc = subprocess.run(
-        [PYTHON, '-u', os.path.join(BASE_DIR, 'parallel_download.py'), '--workers', '2'],
+        [PYTHON, '-u', os.path.join(BASE_DIR, 'scraper', 'parallel_download.py'), '--workers', '2'],
         cwd=BASE_DIR,
         timeout=86400,
     )

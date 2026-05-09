@@ -24,7 +24,7 @@ if sys.stdout.encoding != 'utf-8':
 if sys.stderr.encoding != 'utf-8':
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BOOKLIST_PATH = os.path.join(BASE_DIR, 'booklist.json')
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 LOG_DIR = os.path.join(BASE_DIR, 'logs')
@@ -127,7 +127,7 @@ def worker(worker_id, task_queue, stats, stop_event=None):
 
             cmd = [
                 PYTHON_EXE, '-u',  # -u: unbuffered，实时输出
-                os.path.join(BASE_DIR, 'novel_scraper.py'),
+                os.path.join(BASE_DIR, 'scraper', 'novel_scraper.py'),
                 '--id', qb_id,
             ]
 

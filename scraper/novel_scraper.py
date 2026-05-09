@@ -39,7 +39,7 @@ HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
 }
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 # 请求间隔（秒）
 MIN_DELAY = 0.1
 MAX_DELAY = 0.25

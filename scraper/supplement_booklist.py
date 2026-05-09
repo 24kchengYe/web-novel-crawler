@@ -19,7 +19,7 @@ if sys.stdout.encoding != 'utf-8':
 if sys.stderr.encoding != 'utf-8':
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BOOKLIST_PATH = os.path.join(BASE_DIR, 'booklist.json')
 QBXSW_BASE = "https://www.qbxsw.com"
 HEADERS = {
