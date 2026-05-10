@@ -21,20 +21,19 @@ from scraper.sites.base import NovelSiteBase
 
 
 # 分类映射：中文名 -> URL 路径
+# quanben-xiaoshuo.com 使用 /category/xxxiaoshuo.html 格式
+# 注意：该站不像 qbxsw 有细分分类，只有以下大类
 CATEGORY_MAP = {
-    "玄幻": "/XuanHuan/",
-    "奇幻": "/QiHuan/",
-    "武侠": "/WuXia/",
-    "仙侠": "/XianXia/",
-    "都市": "/DuShi/",
-    "历史": "/LiShi/",
-    "军事": "/JunShi/",
-    "悬疑": "/XuanYi/",
-    "游戏": "/YouXi/",
-    "科幻": "/KeHuan/",
-    "古言": "/GuYan/",
-    "现言": "/XianYan/",
-    "幻言": "/HuanYan/",
+    "玄幻": "/category/xuanhuanxiaoshuo.html",
+    "仙侠": "/category/xianxiaxiaoshuo.html",
+    "都市": "/category/dushixiaoshuo.html",
+    "历史": "/category/lishixiaoshuo.html",
+    "网游": "/category/wangyouxiaoshuo.html",
+    "言情": "/category/yanqingxiaoshuo.html",
+    "男生": "/category/nanshengxiaoshuo.html",
+    "女生": "/category/nvshengxiaoshuo.html",
+    "在线书库": "/category/zaixianshuku.html",
+    "其他": "/category/qitashuji.html",
 }
 
 # 可用域名列表（按优先级排列）
@@ -102,7 +101,9 @@ class QuanbenScraper(NovelSiteBase):
             if page == 1:
                 url = self.BASE_URL + path
             else:
-                url = self.BASE_URL + path + f"{page}.html"
+                # 分页格式: /category/xuanhuanxiaoshuo-2.html
+                base_path = path.replace(".html", "")
+                url = self.BASE_URL + f"{base_path}-{page}.html"
 
             print(f"  [{self.SITE_NAME}] 获取 {category} 第{page}页 ...", flush=True)
             html = self.fetch(url)
@@ -110,9 +111,9 @@ class QuanbenScraper(NovelSiteBase):
                 break
 
             # 解析书籍列表
-            # 详情页链接格式: /n/书名拼音/ 或 /n/书名拼音/list.html
-            # 分类页中的书籍链接: <a href="/n/xxxxx/">书名</a>
-            pattern = r'<a\s+href="(/n/([^/"]+)/)"[^>]*>([^<]+)</a>'
+            # 分类页链接格式: <a itemprop="url" href="/n/xxx/"><span itemprop="name">书名</span>
+            # 也兼容简单格式: <a href="/n/xxx/">书名</a>
+            pattern = r'href="(/n/([^/"]+)/)"[^>]*>(?:<span[^>]*>)?([^<]+)'
             matches = re.findall(pattern, html)
 
             page_count = 0

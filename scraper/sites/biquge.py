@@ -31,28 +31,24 @@ class BiqugeScraper(NovelSiteBase):
     ENCODING = "utf-8"
 
     # 分类映射: 中文名 -> URL 路径
+    # xbiquge.com.cn 实际使用 /list{N}/ 格式
     CATEGORY_MAP = {
-        "玄幻": "/xuanhuanxiaoshuo/",
-        "修真": "/xiuzhenxiaoshuo/",
-        "都市": "/dushixiaoshuo/",
-        "历史": "/lishixiaoshuo/",
-        "网游": "/wangyouxiaoshuo/",
-        "科幻": "/kehuanxiaoshuo/",
-        "言情": "/yanqingxiaoshuo/",
-        "其他": "/qitaxiaoshuo/",
+        "玄幻": "/list1/",
+        "修真": "/list2/",
+        "都市": "/list3/",
+        "历史": "/list4/",
+        "网游": "/list5/",
+        "科幻": "/list6/",
+        "言情": "/list7/",
+        "其他": "/list8/",
     }
 
-    # 排行榜映射
+    # 排行榜和其他列表
     RANK_MAP = {
-        "总点击榜": "/top/allvisit/",
-        "月点击榜": "/top/monthvisit/",
-        "周点击榜": "/top/weekvisit/",
-        "总推荐榜": "/top/allvote/",
-        "月推荐榜": "/top/monthvote/",
-        "周推荐榜": "/top/weekvote/",
-        "收藏榜": "/top/goodnum/",
-        "字数榜": "/top/size/",
-        "最近更新": "/top/lastupdate/",
+        "排行榜": "/top/",
+        "全本": "/full/",
+        "最新发布": "/lastpost/",
+        "最近更新": "/lastupdate/",
     }
 
     # ---- 接口实现 ----
@@ -185,6 +181,7 @@ class BiqugeScraper(NovelSiteBase):
             chapter_section = list_match.group(1)
 
         # 解析 <dd><a href="/book/{id}/{chap}.html">章节名</a></dd>
+        # book_id 格式: "0/411"，需要转义斜杠
         pattern = (
             r'<dd>\s*<a\s+href="(/book/'
             + re.escape(book_id)
@@ -284,7 +281,7 @@ class BiqugeScraper(NovelSiteBase):
         # <span class="s2"><a href="/book/{id}/">书名</a></span>
         # <span class="s5">作者</span>
         rows = re.findall(
-            r'<span\s+class="s2">\s*<a\s+href="/book/(\d+)/"[^>]*>([^<]+)</a>\s*</span>'
+            r'<span\s+class="s2">\s*<a\s+href="/book/(\d+/\d+)/"[^>]*>([^<]+)</a>\s*</span>'
             r'.*?'
             r'<span\s+class="s5">\s*([^<]*?)\s*</span>',
             html,
@@ -302,7 +299,7 @@ class BiqugeScraper(NovelSiteBase):
             return books
 
         # 模式2: 通用 <a href="/book/{id}/">书名</a> 提取
-        pattern = r'<a\s+href="/book/(\d+)/"[^>]*>([^<]+)</a>'
+        pattern = r'<a\s+href="/book/(\d+/\d+)/"[^>]*>([^<]+)</a>'
         matches = re.findall(pattern, html)
         seen = set()
         for book_id, name in matches:
