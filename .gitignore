@@ -1,6 +1,5 @@
 data/
-data_cleaned/
-data_train/
+data_*/
 logs/
 proxy_pool_configs/
 __pycache__/

@@ -238,7 +238,7 @@ data/书名_作者/
 ### EXP-3.2: 语料清洗管线
 
 **Date**: 2026-05-09
-**Git**: 待提交（scraper/ 重组 + cleaning/ 新增）
+**Git**: `b2dc48c`
 **Status**: complete
 
 #### Motivation
@@ -320,8 +320,8 @@ $$\text{Quality Tier} = \begin{cases} S & \text{collect} \geq 100{,}000 \\ A & 1
 ### EXP-4.1: 训练数据构造
 
 **Date**: 2026-05-09
-**Git**: 待提交
-**Status**: ready（代码已完成，待全量运行）
+**Git**: `b2dc48c`
+**Status**: ready（代码已完成并调试通过，待工作站全量运行）
 
 #### Motivation
 
@@ -469,14 +469,105 @@ python -m cleaning.build_train_data --tier S,A --workers 16
 - 修复所有 `BASE_DIR` / `OUTPUT_DIR` 路径引用（指向项目根而非 scraper/ 子目录）
 - 修复跨模块导入（`parallel_download.py` → `scraper/novel_scraper.py`，`match_and_download.py` → `from scraper import novel_scraper`）
 
+### ENG-2: GitHub 仓库 + 工作站代码同步
+
+**Date**: 2026-05-09
+**Git**: `b2dc48c`
+
+项目推送到 GitHub：`https://github.com/24kchengYe/web-novel-crawler`
+
+**工作站同步**：
+- 路径：`D:\projects\web-novel-crawler`（workstation, SSH alias `workstation`）
+- 工作站 git 有全局代理 `socks5://127.0.0.1:1080`，clone/pull 需要覆盖：
+  ```
+  git -c http.proxy= -c https.proxy= clone/pull
+  ```
+- Python 导入验证通过：`import cleaning.clean_corpus` OK
+
+**开发工作流**：
+```
+本机(wolf) 写代码 → git push origin master
+    ↓
+工作站(workstation) git pull → 运行清洗/训练/推理
+    ↓
+本机 ssh 查看结果 → 调参 → 再 push
+```
+
+**待办**：工作站需要拷贝 `data/`（33GB）到 `D:\projects\web-novel-crawler\data\`，git 不跟踪数据目录。
+
+---
+
+### EXP-2.1: 多渠道语料扩充
+
+**Date**: 2026-05-09
+**Git**: 待提交
+**Status**: in_progress
+
+#### Motivation
+
+EXP-2.0 采集了 1,675 本小说（29.54 亿汉字），但存在分类短板：悬疑仅 55 本、科幻 98 本、短篇几乎为零。同时仅依赖单一数据源（qbxsw.com），语料多样性不足。需要从多个渠道扩充：开源数据集（零成本）+ 新站点爬取（增量）。
+
+#### Method
+
+**A. 开源数据集下载**（`scraper/download_datasets.py`）
+
+| 数据集 | 来源 | 规模 | 格式 | 分类 |
+|--------|------|------|------|------|
+| webnovel_cn | HuggingFace (zxbsmk) | 50K 条 (子集) / 完整版 2170 万条 | Alpaca instruction | 混合（12,560 本网文） |
+| chinese-novel-dataset | HuggingFace (kkcmbx) | 3,862 条 | Alpaca instruction | 混合 |
+| Chinese-Pixiv-Novel | HuggingFace (wuliangfo) | 145,163 本, 12.9GB | text + meta | 同人/二次创作 |
+| LongData-Corpus 小说 | 清华云盘 | 长文本(>16K字) | JSON | 长篇小说 |
+| GuoFeng-Webnovel | GitHub | 多语言网文 | mixed | 中英对照 |
+
+**B. 多站点爬虫框架**（`scraper/sites/`）
+
+统一基类 `NovelSiteBase`，每个站点独立模块，标准接口：
+- `get_book_list(category)` → 书籍列表
+- `get_chapters(book_id)` → 章节列表
+- `get_chapter_content(url)` → 正文
+- `get_ad_patterns()` → 站点特有广告
+
+| 站点模块 | 域名 | 预估增量 | 反爬难度 | 输出目录 |
+|---------|------|---------|---------|---------|
+| quanben.py | quanben-xiaoshuo.com / quanben.io / quanben.net | ~500-1000 本 | 低 | data_quanben/ |
+| biquge.py | xbiquge.com.cn | 数千本 | 中(Cloudflare) | data_biquge/ |
+| shu69.py | 69shuba.com (域名常变) | 数千本 | 低-中 | data_69shu/ |
+| dingdian.py | dingdiann.com (域名常变) | 数千本 | 中 | data_dingdian/ |
+
+所有站点输出格式统一：`data_{site}/书名_作者/metadata.json + chapters.jsonl`
+
+**C. 分类补充重点**
+
+针对现有短板优先爬取：
+- 悬疑推理：各站点的悬疑/灵异分类
+- 科幻：各站点的科幻分类
+- 女频言情：笔趣阁和 quanben 的言情分区
+- 短篇集：如果有短篇小说专区也收录
+
+#### Analysis
+
+- webnovel_cn 完整版 2170 万条如能获取，直接就是海量训练数据（但需百度网盘下载）
+- Pixiv 小说数据集 12.9GB 含大量 R-18 内容，需要在训练时做内容过滤
+- 盗版站域名不稳定（尤其 69shu、顶点），代码中保留多域名切换能力
+- 各站点的书目有大量重叠（同一本书在多个站都有），后续需要跨站去重
+
+#### Artifacts
+
+- 下载器：`scraper/download_datasets.py`
+- 爬虫框架：`scraper/sites/base.py`
+- 站点模块：`scraper/sites/quanben.py`、`biquge.py`、`shu69.py`、`dingdian.py`
+- 开源数据输出：`data_opensource/`
+- 各站点数据输出：`data_quanben/`、`data_biquge/`、`data_69shu/`、`data_dingdian/`
+
 ---
 
 ## 6. 下一步
 
-1. **EXP-4.1**: 构造 instruction-response 训练数据（从 S+A 级语料中）
-2. **EXP-4.2**: Qwen2.5-14B LoRA 微调（工作站 GPU 2+3）
-3. 调研番茄小说/七猫平台对 AI 生成内容的最新审核政策
-4. 考虑 C 级语料的多维重评（结合晋江积分、豆瓣评分）
+1. **EXP-2.1 执行**：运行开源数据集下载 + 多站点爬虫（并行）
+2. **跨站去重**：合并所有来源的书目，按书名+作者去重
+3. **EXP-4.1 全量运行**：工作站上执行训练数据构造（合并所有数据源）
+4. **EXP-4.2**: Qwen2.5-14B LoRA 微调（工作站 GPU 2+3）
+5. 调研番茄小说/七猫平台对 AI 生成内容的最新审核政策
 
 ---
 
@@ -485,6 +576,7 @@ python -m cleaning.build_train_data --tier S,A --workers 16
 | EXP-ID | 标题 | 日期 | 状态 | 关键结果 |
 |--------|------|------|------|----------|
 | EXP-2.0 | 多源多平台语料采集 | 2026-04-28 ~ 05-08 | complete | 1,675 本、29.54 亿汉字、起点覆盖 92% |
+| EXP-2.1 | 多渠道语料扩充 | 2026-05-09 | in_progress | 5 个开源数据集 + 4 个新站点爬虫 |
 | EXP-3.1 | 原始语料统计与质量审计 | 2026-05-08 | complete | 29.54 亿汉字，word_count 高估 19% |
 | EXP-3.2 | 语料清洗管线 | 2026-05-09 | complete | 29.42 亿字，去除 56.6 万行水印，S+A 级 21.16 亿字 |
 | EXP-4.1 | 训练数据构造 | 2026-05-09 | ready | 3 本调试: 4,157 条，三类比例 44/27/27，代码完成待全量运行 |
@@ -515,3 +607,4 @@ python -m cleaning.build_train_data --tier S,A --workers 16
 | 爬虫 | `scraper/qidian_booklist.py` | 起点榜单采集 |
 | 爬虫 | `scraper/multi_platform_stats.py` | 多平台统计采集 |
 | 清洗 | `cleaning/clean_corpus.py` | 语料清洗管线 |
+| 训练 | `cleaning/build_train_data.py` | 训练数据构造（Alpaca 格式） |
