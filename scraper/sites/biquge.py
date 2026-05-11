@@ -29,6 +29,7 @@ class BiqugeScraper(NovelSiteBase):
     SITE_NAME = "biquge"
     BASE_URL = "https://www.xbiquge.com.cn"
     ENCODING = "utf-8"
+    MAX_WORKERS = 1  # Playwright 不支持多线程并发
 
     # 分类映射: 中文名 -> URL 路径
     # xbiquge.com.cn 实际使用 /list{N}/ 格式
@@ -173,34 +174,31 @@ class BiqugeScraper(NovelSiteBase):
         # 笔趣阁页面通常有"最新章节"(倒序)和"正文卷"(正序)两段
         # 优先取"正文卷"之后的部分，避免重复
         chapters = []
-        chapter_section = html
 
-        # 定位正文章节区域: 找 id="list" 的 div
-        list_match = re.search(r'<div\s+id="list"[^>]*>(.*)', html, re.DOTALL)
-        if list_match:
-            chapter_section = list_match.group(1)
-
-        # 解析 <dd><a href="/book/{id}/{chap}.html">章节名</a></dd>
-        # book_id 格式: "0/411"，需要转义斜杠
+        # 通用解析：找所有指向本书章节的链接
+        # 链接格式: <a href="/book/{book_id}/{chap_id}.html">章节名</a>
+        # 可能在 <dd>、<li> 或直接在 div 中
         pattern = (
-            r'<dd>\s*<a\s+href="(/book/'
+            r'href="(/book/'
             + re.escape(book_id)
-            + r'/(\d+)\.html)"[^>]*>([^<]+)</a>\s*</dd>'
+            + r'/(\d+)\.html)"[^>]*>([^<]+)</a>'
         )
-        matches = re.findall(pattern, chapter_section)
+        matches = re.findall(pattern, html)
 
         seen_chap = set()
         for path, chap_id, title in matches:
-            if chap_id not in seen_chap:
+            title = title.strip()
+            if chap_id not in seen_chap and len(title) > 0:
                 seen_chap.add(chap_id)
                 full_url = self.BASE_URL + path
-                chapters.append((full_url, title.strip()))
+                chapters.append((full_url, title))
 
         return info, chapters
 
     def get_chapter_content(self, chapter_url) -> str:
         """
         获取单个章节的纯文本内容。
+        使用 Playwright 无头浏览器渲染 JS 加载的正文。
 
         Args:
             chapter_url: 章节完整 URL
@@ -208,26 +206,19 @@ class BiqugeScraper(NovelSiteBase):
         Returns:
             纯文本字符串，获取失败返回空字符串
         """
-        html = self.fetch(chapter_url)
-        if not html:
+        from scraper.sites.playwright_fetcher import get_fetcher
+
+        fetcher = get_fetcher(max_browsers=2)
+        text = fetcher.get_page_text(chapter_url, wait_ms=5000)
+
+        if not text:
             return ""
 
-        # 提取 div#content 中的内容
-        m = re.search(r'id="content"[^>]*>(.*?)</div>', html, re.DOTALL)
-        if not m:
-            # 备选: 尝试 class="showtxt" 等常见容器
-            m = re.search(r'class="showtxt"[^>]*>(.*?)</div>', html, re.DOTALL)
-        if not m:
-            return ""
-
-        content_html = m.group(1)
-        text = self.clean_html(content_html)
-
-        # 清理空行和多余空白
+        # 提取正文段落（过滤导航、广告等短行）
         lines = []
         for line in text.split('\n'):
-            line = line.strip()
-            if line:
+            line = line.strip().replace('\xa0', ' ')
+            if len(line) > 20:
                 lines.append(line)
         text = '\n'.join(lines)
 
