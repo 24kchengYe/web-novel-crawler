@@ -159,61 +159,37 @@ def download_chinese_novel():
 # Dataset: Chinese-Pixiv-Novel (145K, 12.9GB)
 # ============================================================
 def download_pixiv_novel():
-    """下载 Chinese-Pixiv-Novel (大文件，流式处理)"""
+    """下载 Chinese-Pixiv-Novel (12.9GB zip, 用 huggingface_hub 下载原始文件)"""
     name = "Chinese-Pixiv-Novel"
     out_dir = os.path.join(OPENSOURCE_DIR, name)
-    os.makedirs(out_dir, exist_ok=True)
+    raw_dir = os.path.join(out_dir, "raw")
+    os.makedirs(raw_dir, exist_ok=True)
 
     info_path = os.path.join(out_dir, "source_info.json")
     if os.path.exists(info_path):
         print(f"  [{name}] 已存在，跳过下载")
         return
 
-    print(f"  [{name}] 下载 HuggingFace 数据集 (12.9GB, 流式)...")
-    try:
-        from datasets import load_dataset
-        ds = load_dataset("wuliangfo/Chinese-Pixiv-Novel", split="train", streaming=True)
+    print(f"  [{name}] 下载原始 zip 文件 (12.9GB)...")
+    print(f"  [{name}] 此数据集较大，建议手动下载:")
+    print(f"    huggingface-cli download wuliangfo/Chinese-Pixiv-Novel --repo-type dataset --local-dir {raw_dir}")
+    print(f"    或浏览器下载: https://huggingface.co/datasets/wuliangfo/Chinese-Pixiv-Novel")
+    print(f"    下载后放入: {raw_dir}/")
 
-        jsonl_path = os.path.join(out_dir, "data.jsonl")
-        total_hanzi = 0
-        count = 0
-        with open(jsonl_path, "w", encoding="utf-8") as f:
-            for item in ds:
-                text = item.get("text", "")
-                if not text or count_hanzi(text) < 100:
-                    continue
-                hz = count_hanzi(text)
-                total_hanzi += hz
-                count += 1
-                record = {
-                    "index": count,
-                    "title": item.get("title", ""),
-                    "content": text,
-                    "hanzi_count": hz,
-                    "tags": item.get("tags", ""),
-                    "source": name,
-                }
-                f.write(json.dumps(record, ensure_ascii=False) + "\n")
-                if count % 10000 == 0:
-                    print(f"    [{name}] {count} 条, {total_hanzi/1e8:.2f} 亿汉字...", flush=True)
+    with open(info_path, "w", encoding="utf-8") as f:
+        json.dump({
+            "name": name,
+            "source_url": "https://huggingface.co/datasets/wuliangfo/Chinese-Pixiv-Novel",
+            "description": "Pixiv 中文小说 (145K 本, 同人/二创, 12.9GB zip)",
+            "format": "zip -> txt + meta-txt per novel",
+            "license": "OpenRAIL",
+            "category": "同人/二次创作",
+            "note": "数据未经清洗；需手动下载 zip 并解压到 raw/",
+            "status": "pending_manual_download",
+            "downloaded_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        }, f, ensure_ascii=False, indent=2)
 
-        with open(info_path, "w", encoding="utf-8") as f:
-            json.dump({
-                "name": name,
-                "source_url": "https://huggingface.co/datasets/wuliangfo/Chinese-Pixiv-Novel",
-                "description": "Pixiv 中文小说 (同人/二创, R-18 含量高)",
-                "format": "text + metadata",
-                "total_samples": count,
-                "total_hanzi": total_hanzi,
-                "license": "OpenRAIL",
-                "category": "同人/二次创作",
-                "note": "数据未经清洗，可能含低质量内容",
-                "downloaded_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-            }, f, ensure_ascii=False, indent=2)
-
-        print(f"  [{name}] 完成: {count} 条, {total_hanzi/1e4:.0f} 万汉字")
-    except Exception as e:
-        print(f"  [{name}] 下载失败: {e}")
+    print(f"  [{name}] 已记录，等待手动下载")
 
 
 # ============================================================
