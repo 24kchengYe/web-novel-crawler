@@ -208,7 +208,7 @@ class BiqugeScraper(NovelSiteBase):
         """
         from scraper.sites.playwright_fetcher import get_fetcher
 
-        fetcher = get_fetcher(max_browsers=2)
+        fetcher = get_fetcher()
         text = fetcher.get_page_text(chapter_url, wait_ms=5000)
 
         if not text:
